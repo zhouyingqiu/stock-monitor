@@ -10,9 +10,11 @@
       http-equiv="Content-Security-Policy"
       content="upgrade-insecure-requests"
     />
-    <title>自选股实时看板 - 价差监控版</title>
+    <title>自选股实时看板 - K 线增强版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <!-- ✅ 新增：K 线图库 Lightweight Charts -->
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     <style>
       body {
         background-color: #f3f4f6;
@@ -28,12 +30,31 @@
         transform: rotate(180deg);
       }
 
-      /* 移动端优化 */
+      /* K 线图弹窗 */
+      .kline-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      }
+      .kline-content {
+        background: white;
+        border-radius: 12px;
+        width: 95%;
+        max-width: 800px;
+        max-height: 90vh;
+        overflow: hidden;
+      }
+
       @media (max-width: 768px) {
         .stock-card {
-          background-color: white;
-          padding: 10px;
-          border-bottom: 1px solid rgba(133, 133, 133, 0.6);
+          @apply bg-white p-2.5 border-b border-gray-200;
         }
         .hide-on-mobile {
           display: none;
@@ -42,13 +63,12 @@
           display: block;
         }
         .stat-card {
-          padding: 8px;
+          @apply p-2;
         }
         .stat-value {
-          font-size: 16px;
+          @apply text-lg;
         }
       }
-
       @media (min-width: 769px) {
         .stock-card {
           display: none;
@@ -57,36 +77,32 @@
           display: none;
         }
         .stat-card {
-          padding: 12px;
+          @apply p-4;
         }
         .stat-value {
-          font-size: 18px;
+          @apply text-2xl;
         }
       }
-
-      /* 触摸优化 */
       .touch-target {
         min-height: 44px;
         min-width: 44px;
       }
-
-      /* 平滑滚动 */
       .smooth-scroll {
         -webkit-overflow-scrolling: touch;
       }
     </style>
   </head>
   <body>
-    <div id="app" v-cloak class="min-h-screen p-2 md:p-4 lg:p-4">
-      <!-- 头部 - 移动端单行布局 -->
-      <header class="max-w-7xl mx-auto mb-3 md:mb-4">
+    <div id="app" v-cloak class="min-h-screen p-2 md:p-4 lg:p-8">
+      <!-- 头部 -->
+      <header class="max-w-7xl mx-auto mb-3 md:mb-6">
         <div class="flex items-center justify-between gap-2">
           <div class="flex-1 min-w-0">
             <h1 class="text-base md:text-2xl font-bold text-gray-800 truncate">
               📊 自选股看板
             </h1>
             <p class="text-[10px] md:text-xs text-gray-500 truncate">
-              价差=(可买入-当前价)÷当前价
+              价差=(可买入 - 当前价)÷当前价
             </p>
           </div>
           <button
@@ -100,7 +116,7 @@
       </header>
 
       <main class="max-w-7xl mx-auto">
-        <!-- 统计卡片 - 移动端压缩布局 -->
+        <!-- 统计卡片 -->
         <div class="grid grid-cols-5 gap-1.5 md:gap-4 mb-3 md:mb-6">
           <div
             class="bg-white stat-card rounded-lg shadow-sm border border-gray-100 text-center"
@@ -250,7 +266,7 @@
                   v-for="stock in sortedStocks"
                   :key="stock.code"
                   class="hover:bg-blue-50 transition cursor-pointer"
-                  @click="openDetail(stock)"
+                  @click="showKLine(stock)"
                 >
                   <td class="p-4 font-bold text-gray-800 text-sm">
                     {{ stock.name }}
@@ -317,9 +333,8 @@
           <div v-for="(stock, index) in sortedStocks" :key="stock.code">
             <div
               class="stock-card active:scale-[0.98] transition-transform"
-              @click="openDetail(stock)"
+              @click="showKLine(stock)"
             >
-              <!-- 第一行：股票名称、代码、当前价 -->
               <div class="flex justify-between items-start mb-1.5">
                 <div class="flex-1 min-w-0 pr-2">
                   <div class="font-bold text-gray-800 text-sm truncate">
@@ -345,53 +360,47 @@
                   </div>
                 </div>
               </div>
-
-              <!-- 第二行：涨跌幅、价差 -->
               <div class="flex justify-between items-center mb-1.5">
                 <span
                   class="px-1.5 py-0.5 rounded text-[10px] font-medium"
                   :class="getBadgeClass(stock.percent)"
+                  >{{ stock.percent >= 0 ? '+' : '' }}{{
+                  stock.percent.toFixed(2) }}%</span
                 >
-                  {{ stock.percent >= 0 ? '+' : '' }}{{ stock.percent.toFixed(2)
-                  }}%
-                </span>
                 <span
                   class="px-1.5 py-0.5 rounded text-[10px] font-medium"
                   :class="getPriceDiffClass(stock.priceDiff)"
+                  >价差 {{ stock.priceDiff >= 0 ? '+' : '' }}{{
+                  stock.priceDiff.toFixed(2) }}%</span
                 >
-                  价差 {{ stock.priceDiff >= 0 ? '+' : '' }}{{
-                  stock.priceDiff.toFixed(2) }}%
-                </span>
               </div>
-
-              <!-- 第三行：可买入价、成交量 -->
               <div
                 class="flex justify-between items-center text-[10px] border-t border-gray-100 pt-1.5"
               >
                 <div class="truncate pr-2">
-                  <span class="text-gray-500">可买:</span>
-                  <span class="font-mono font-medium text-gray-700 ml-0.5"
+                  <span class="text-gray-500">可买:</span
+                  ><span class="font-mono font-medium text-gray-700 ml-0.5"
                     >{{ formatPrice(stock.canBuy) }}</span
                   >
                 </div>
                 <div class="truncate text-gray-600">
-                  量: {{ formatVolume(stock.volume) }}
+                  量：{{ formatVolume(stock.volume) }}
                 </div>
               </div>
-
-              <!-- 第四行：最高/最低 -->
               <div
                 class="flex justify-between items-center text-[10px] text-gray-500 mt-1"
               >
                 <span
-                  >高:
-                  <span :class="getColorClass(stock.change)" class="font-mono"
+                  >高：<span
+                    :class="getColorClass(stock.change)"
+                    class="font-mono"
                     >{{ formatPrice(stock.high) }}</span
                   ></span
                 >
                 <span
-                  >低:
-                  <span :class="getColorClass(stock.change)" class="font-mono"
+                  >低：<span
+                    :class="getColorClass(stock.change)"
+                    class="font-mono"
                     >{{ formatPrice(stock.low) }}</span
                   ></span
                 >
@@ -420,12 +429,83 @@
             ></span>
             <span class="truncate">价差<0：建议等待</span>
           </span>
+          <span
+            class="flex items-center gap-1 bg-blue-50 px-1.5 py-1 md:px-2 md:py-1.5 rounded border border-blue-200"
+          >
+            <span class="text-[10px] md:text-xs">📈 点击股票查看 K 线图</span>
+          </span>
         </div>
       </main>
+
+      <!-- ✅ 新增：K 线图弹窗 -->
+      <div v-if="showKLineModal" class="kline-modal" @click="closeKLine">
+        <div class="kline-content" @click.stop>
+          <!-- 弹窗头部 -->
+          <div
+            class="flex justify-between items-center p-3 md:p-4 border-b border-gray-200"
+          >
+            <div>
+              <h2 class="text-base md:text-lg font-bold">
+                {{ selectedStock?.name }} ({{ selectedStock?.displayCode }})
+              </h2>
+              <p class="text-xs text-gray-500">
+                当前价：{{ formatPrice(selectedStock?.current) }} | 价差：{{
+                selectedStock?.priceDiff?.toFixed(2) }}%
+              </p>
+            </div>
+            <button
+              @click="closeKLine"
+              class="text-gray-500 hover:text-gray-700 text-2xl"
+            >
+              ×
+            </button>
+          </div>
+
+          <!-- K 线周期选择 -->
+          <div
+            class="flex gap-2 p-2 md:p-3 border-b border-gray-200 overflow-x-auto"
+          >
+            <button
+              v-for="period in periods"
+              :key="period.value"
+              @click="changePeriod(period.value)"
+              :class="klinePeriod === period.value ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'"
+              class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap transition"
+            >
+              {{ period.label }}
+            </button>
+          </div>
+
+          <!-- K 线图容器 -->
+          <div class="p-2 md:p-4">
+            <div
+              id="kline-chart"
+              style="width: 100%; height: 300px; min-height: 300px"
+            ></div>
+            <div v-if="klineLoading" class="text-center py-8 text-gray-500">
+              📊 加载中...
+            </div>
+            <div
+              v-if="klineError"
+              class="text-center py-8 text-red-500 text-sm"
+            >
+              {{ klineError }}
+            </div>
+          </div>
+
+          <!-- 成交量图（可选） -->
+          <div class="px-2 md:px-4 pb-2 md:pb-4">
+            <div
+              id="volume-chart"
+              style="width: 100%; height: 80px; min-height: 80px"
+            ></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script>
-      const { createApp, ref, computed, onMounted } = Vue;
+      const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
       createApp({
         setup() {
           const stockList = ref([
@@ -444,11 +524,30 @@
             { code: "sz000707", name: "双环科技", canBuy: 6.2 },
             { code: "sz000731", name: "四川美丰", canBuy: 7.2 },
           ]);
+
           const rawData = ref({});
           const loading = ref(false);
-          const sortKey = ref("priceDiff"); // 默认按价差排序
-          const sortOrder = ref("desc"); // 默认降序（从大到小）
+          const sortKey = ref("priceDiff");
+          const sortOrder = ref("asc");
 
+          // ✅ K 线图相关
+          const showKLineModal = ref(false);
+          const selectedStock = ref(null);
+          const klinePeriod = ref("day"); // day/week/month
+          const klineData = ref([]);
+          const klineLoading = ref(false);
+          const klineError = ref("");
+          let candlestickSeries = null;
+          let volumeSeries = null;
+          let chart = null;
+
+          const periods = [
+            { value: "day", label: "日 K" },
+            { value: "week", label: "周 K" },
+            { value: "month", label: "月 K" },
+          ];
+
+          // 解析实时数据
           const parseTencentData = (code, content) => {
             const fields = content.split("~");
             const getFloat = (idx) => {
@@ -477,6 +576,7 @@
             };
           };
 
+          // 获取实时数据
           const fetchData = () => {
             loading.value = true;
             const codes = stockList.value.map((s) => s.code).join(",");
@@ -512,6 +612,152 @@
               .finally(() => (loading.value = false));
           };
 
+          // ✅ 腾讯财经K线数据获取函数
+          const fetchKLineData = async (code, period) => {
+            klineLoading.value = true;
+            klineError.value = "";
+
+            const periodMap = { day: "day", week: "week", month: "month" };
+
+            try {
+              const url = `https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=${code},${periodMap[period]},,,200,qfq`;
+              const response = await fetch(url);
+              const result = await response.json();
+
+              const stockData = result.data?.[code]?.[periodMap[period]];
+              if (!stockData || stockData.length === 0) {
+                klineError.value = "暂无K线数据";
+                klineLoading.value = false;
+                return;
+              }
+
+              klineData.value = stockData.map((item) => ({
+                time: item[0],
+                open: parseFloat(item[1]),
+                close: parseFloat(item[2]),
+                high: parseFloat(item[3]),
+                low: parseFloat(item[4]),
+                volume: parseInt(item[5]) || 0,
+              }));
+
+              await nextTick();
+              drawKLineChart();
+            } catch (err) {
+              klineError.value = "加载失败，请重试";
+              console.error("K线数据获取失败:", err);
+            } finally {
+              klineLoading.value = false;
+            }
+          };
+
+          // ✅ 绘制 K 线图
+          const drawKLineChart = () => {
+            if (!document.getElementById("kline-chart")) return;
+
+            // 销毁旧图表
+            if (chart) {
+              chart.remove();
+            }
+
+            // 创建新图表
+            chart = LightweightCharts.createChart(
+              document.getElementById("kline-chart"),
+              {
+                width: document.getElementById("kline-chart").clientWidth,
+                height: 300,
+                layout: {
+                  backgroundColor: "#ffffff",
+                  textColor: "#333",
+                },
+                grid: {
+                  vertLines: { color: "#f0f0f0" },
+                  horzLines: { color: "#f0f0f0" },
+                },
+                crosshair: {
+                  mode: LightweightCharts.CrosshairMode.Normal,
+                },
+                rightPriceScale: {
+                  borderColor: "#e0e0e0",
+                },
+                timeScale: {
+                  borderColor: "#e0e0e0",
+                  timeVisible: true,
+                },
+              },
+            );
+
+            // K 线系列
+            candlestickSeries = chart.addCandlestickSeries({
+              upColor: "#ef4444", // 红色（涨）
+              downColor: "#22c55e", // 绿色（跌）
+              borderUpColor: "#ef4444",
+              borderDownColor: "#22c55e",
+              wickUpColor: "#ef4444",
+              wickDownColor: "#22c55e",
+            });
+
+            // 成交量系列
+            volumeSeries = chart.addHistogramSeries({
+              color: "#26a69a",
+              priceFormat: { type: "volume" },
+              priceScaleId: "",
+              scaleMargins: { top: 0.85, bottom: 0 },
+            });
+
+            // 设置数据
+            const candleData = klineData.value.map((d) => ({
+              time: d.time,
+              open: d.open,
+              high: d.high,
+              low: d.low,
+              close: d.close,
+            }));
+
+            const volumeData = klineData.value.map((d) => ({
+              time: d.time,
+              value: d.volume,
+              color:
+                d.close >= d.open
+                  ? "rgba(38, 166, 154, 0.5)"
+                  : "rgba(239, 68, 68, 0.5)",
+            }));
+
+            candlestickSeries.setData(candleData);
+            volumeSeries.setData(volumeData);
+
+            // 自适应窗口大小
+            window.addEventListener("resize", () => {
+              if (chart && document.getElementById("kline-chart")) {
+                chart.applyOptions({
+                  width: document.getElementById("kline-chart").clientWidth,
+                });
+              }
+            });
+          };
+
+          // ✅ 显示 K 线图
+          const showKLine = async (stock) => {
+            selectedStock.value = stock;
+            showKLineModal.value = true;
+            await nextTick();
+            await fetchKLineData(stock.code, klinePeriod.value);
+          };
+
+          // ✅ 关闭 K 线图
+          const closeKLine = () => {
+            showKLineModal.value = false;
+            selectedStock.value = null;
+          };
+
+          // ✅ 切换周期
+          const changePeriod = async (period) => {
+            klinePeriod.value = period;
+            if (selectedStock.value) {
+              await fetchKLineData(selectedStock.value.code, period);
+            }
+          };
+
+          // 计算属性
           const processedStocks = computed(() => {
             return stockList.value.map((config) => {
               const data = rawData.value[config.code] || {};
@@ -557,6 +803,7 @@
             () => processedStocks.value.filter((s) => s.priceDiff <= 0).length,
           );
 
+          // 工具函数
           const formatPrice = (p) => (p > 0 ? p.toFixed(2) : "-");
           const formatVolume = (v) => {
             if (!v) return "-";
@@ -586,14 +833,6 @@
               sortOrder.value = "asc";
             }
           };
-          const openDetail = (stock) => {
-            const code = stock.displayCode;
-            const market = stock.code.startsWith("sh") ? "SH" : "SZ";
-            window.open(
-              `https://gu.qq.com/${market.toLowerCase()}${code}/gp`,
-              "_blank",
-            );
-          };
 
           onMounted(() => {
             fetchData();
@@ -617,7 +856,17 @@
             getColorClass,
             getBadgeClass,
             getPriceDiffClass,
-            openDetail,
+            // K 线图相关
+            showKLineModal,
+            selectedStock,
+            klinePeriod,
+            klineData,
+            klineLoading,
+            klineError,
+            periods,
+            showKLine,
+            closeKLine,
+            changePeriod,
           };
         },
       }).mount("#app");
