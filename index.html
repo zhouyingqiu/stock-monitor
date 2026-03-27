@@ -235,7 +235,44 @@
                   <th class="p-4 font-semibold text-sm">代码</th>
                   <th class="p-4 font-semibold text-sm text-right">可买入价</th>
                   <th class="p-4 font-semibold text-sm text-right">当前价</th>
-                  <th class="p-4 font-semibold text-sm text-right">涨跌额</th>
+                   <th
+                    class="p-4 font-semibold text-sm text-right cursor-pointer hover:bg-gray-100 transition select-none touch-target"
+                    @click="sortBy('priceDiff')"
+                    :class="{ 'sort-asc': sortKey === 'priceDiff' && sortOrder === 'asc' }"
+                  >
+                    <span class="inline-flex items-center gap-1"
+                      >价差%
+                      <svg
+                        v-if="sortKey === 'priceDiff'"
+                        class="sort-icon w-3 h-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M5 15l7-7 7 7"
+                        ></path>
+                      </svg>
+                      <svg
+                        v-else
+                        class="sort-icon w-3 h-3 opacity-30"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M5 15l7-7 7 7"
+                        ></path>
+                      </svg>
+                    </span>
+                  </th>
+                  <!-- <th class="p-4 font-semibold text-sm text-right">涨跌额</th> -->
                   <th
                     class="p-4 font-semibold text-sm text-right cursor-pointer hover:bg-gray-100 transition select-none touch-target"
                     @click="sortBy('percent')"
@@ -274,43 +311,7 @@
                     </span>
                   </th>
                   <th class="p-4 font-semibold text-sm text-right">成交量</th>
-                  <th
-                    class="p-4 font-semibold text-sm text-right cursor-pointer hover:bg-gray-100 transition select-none touch-target"
-                    @click="sortBy('priceDiff')"
-                    :class="{ 'sort-asc': sortKey === 'priceDiff' && sortOrder === 'asc' }"
-                  >
-                    <span class="inline-flex items-center gap-1"
-                      >价差%
-                      <svg
-                        v-if="sortKey === 'priceDiff'"
-                        class="sort-icon w-3 h-3"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M5 15l7-7 7 7"
-                        ></path>
-                      </svg>
-                      <svg
-                        v-else
-                        class="sort-icon w-3 h-3 opacity-30"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M5 15l7-7 7 7"
-                        ></path>
-                      </svg>
-                    </span>
-                  </th>
+                 
                   <th class="p-4 font-semibold text-sm text-right">
                     最高/最低
                   </th>
@@ -346,13 +347,21 @@
                   >
                     {{ formatPrice(stock.current) }}
                   </td>
-                  <td
+                   <td class="p-4 text-right">
+                    <span
+                      class="px-2 py-1 rounded text-xs font-medium inline-block min-w-[70px]"
+                      :class="getPriceDiffClass(stock.priceDiff)"
+                      >{{ stock.priceDiff >= 0 ? '+' : '' }}{{
+                      stock.priceDiff.toFixed(2) }}%</span
+                    >
+                  </td>
+                  <!-- <td
                     class="p-4 text-right font-mono text-xs"
                     :class="getColorClass(stock.change)"
                   >
                     {{ stock.change >= 0 ? '+' : '' }}{{ stock.change.toFixed(2)
                     }}
-                  </td>
+                  </td> -->
                   <td class="p-4 text-right">
                     <span
                       class="px-2 py-1 rounded text-xs font-medium"
@@ -365,14 +374,7 @@
                     {{ formatVolume(stock.volume) }}
                   </td>
              
-                  <td class="p-4 text-right">
-                    <span
-                      class="px-2 py-1 rounded text-xs font-medium inline-block min-w-[70px]"
-                      :class="getPriceDiffClass(stock.priceDiff)"
-                      >{{ stock.priceDiff >= 0 ? '+' : '' }}{{
-                      stock.priceDiff.toFixed(2) }}%</span
-                    >
-                  </td>
+                 
                   <td class="p-4 text-right text-xs">
                     <span :class="getColorClass(stock.change)"
                       >{{ formatPrice(stock.high) }}</span
@@ -581,7 +583,7 @@
             { code: "sh688707", name: "振华新材", canBuy: 13.0, tags: ["新材料", "锂电", "科创板"] , time: '2026-03-06' },
             { code: "sz002408", name: "齐翔腾达", canBuy: 5.5,  tags: ["化工", "丙烷"] , time: '2026-03-06' },
             { code: "sz002100", name: "天康生物", canBuy: 7.0,  tags: ["农业", "养殖", "生物"] , time: '2026-03-06' },
-            { code: "sz300034", name: "钢研高纳", canBuy: 20.0, tags: ["新材料", "航空", "军工"] , time: '2026-03-06' },
+            { code: "sz300034", name: "钢研高纳", canBuy: 20, tags: ["新材料", "航空", "军工"] , time: '2026-03-06' },
             { code: "sz002783", name: "凯龙股份", canBuy: 9.0,  tags: ["化工", "爆破"] , time: '2026-03-06' },
             { code: "sz000928", name: "中钢国际", canBuy: 6.8,  tags: ["冶金", "工程", "央企"] , time: '2026-03-06' },
             { code: "sz002136", name: "安 纳 达",  canBuy: 12.0, tags: ["化工", "钛白粉"] , time: '2026-03-06' },
