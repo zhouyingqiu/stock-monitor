@@ -233,6 +233,7 @@
                 <tr>
                   <th class="p-4 font-semibold text-sm">股票</th>
                   <th class="p-4 font-semibold text-sm">代码</th>
+                  <th class="p-4 font-semibold text-sm text-right">可买入价</th>
                   <th class="p-4 font-semibold text-sm text-right">当前价</th>
                   <th class="p-4 font-semibold text-sm text-right">涨跌额</th>
                   <th
@@ -273,7 +274,6 @@
                     </span>
                   </th>
                   <th class="p-4 font-semibold text-sm text-right">成交量</th>
-                  <th class="p-4 font-semibold text-sm text-right">可买入价</th>
                   <th
                     class="p-4 font-semibold text-sm text-right cursor-pointer hover:bg-gray-100 transition select-none touch-target"
                     @click="sortBy('priceDiff')"
@@ -335,6 +335,11 @@
                       >{{ stock.displayCode }}</span
                     >
                   </td>
+                       <td
+                    class="p-4 text-right font-mono font-medium text-gray-700 text-sm"
+                  >
+                    {{ formatPrice(stock.canBuy) }}
+                  </td>
                   <td
                     class="p-4 text-right font-mono font-bold text-sm"
                     :class="getColorClass(stock.change)"
@@ -359,11 +364,7 @@
                   <td class="p-4 text-right text-xs text-gray-600">
                     {{ formatVolume(stock.volume) }}
                   </td>
-                  <td
-                    class="p-4 text-right font-mono font-medium text-gray-700 text-sm"
-                  >
-                    {{ formatPrice(stock.canBuy) }}
-                  </td>
+             
                   <td class="p-4 text-right">
                     <span
                       class="px-2 py-1 rounded text-xs font-medium inline-block min-w-[70px]"
