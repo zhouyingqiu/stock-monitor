@@ -10,19 +10,350 @@
       http-equiv="Content-Security-Policy"
       content="upgrade-insecure-requests"
     />
-    <title>自选股实时看板 - K 线增强版</title>
+    <title>自选股实时看板</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      (function () {
+        var t = localStorage.getItem("stock-theme") || "system";
+        document.documentElement.setAttribute("data-theme", t);
+      })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-    <!-- ✅ 新增：K 线图库 Lightweight Charts -->
     <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
     <style type="text/tailwindcss">
-      body {
-        background-color: #f3f4f6;
-        -webkit-tap-highlight-color: transparent;
+      :root {
+        color-scheme: light;
+        --font-sans: "Noto Sans SC", system-ui, sans-serif;
+        --font-mono: "JetBrains Mono", ui-monospace, monospace;
+        --bg-base: #f4f2ec;
+        --bg-elevated: rgba(255, 255, 253, 0.88);
+        --bg-muted: rgba(255, 255, 253, 0.55);
+        --bg-hover: rgba(196, 149, 58, 0.08);
+        --bg-active-up: rgba(239, 68, 68, 0.1);
+        --bg-active-down: rgba(34, 197, 94, 0.1);
+        --bg-active-buy: rgba(16, 185, 129, 0.1);
+        --border: rgba(28, 25, 23, 0.08);
+        --border-strong: rgba(28, 25, 23, 0.14);
+        --text-primary: #1c1917;
+        --text-secondary: #57534e;
+        --text-muted: #a8a29e;
+        --accent: #b8860b;
+        --accent-hover: #9a7209;
+        --accent-soft: rgba(184, 134, 11, 0.12);
+        --accent-text: #92680a;
+        --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.04);
+        --shadow-md: 0 4px 24px rgba(28, 25, 23, 0.06);
+        --shadow-lg: 0 12px 48px rgba(28, 25, 23, 0.1);
+        --overlay: rgba(28, 25, 23, 0.45);
+        --grid-dot: rgba(184, 134, 11, 0.07);
+        --chart-bg: #fffdf9;
+        --chart-grid: #ebe6dc;
+        --chart-text: #44403c;
+        --chart-border: #d6d3d1;
+        --badge-neutral-bg: rgba(120, 113, 108, 0.1);
+        --badge-neutral-text: #57534e;
+        --badge-neutral-border: rgba(120, 113, 108, 0.15);
+        --code-bg: rgba(120, 113, 108, 0.08);
+        --divider: rgba(28, 25, 23, 0.06);
+        --kline-link: #b8860b;
+        --transition-theme:
+          background-color 0.35s ease, color 0.35s ease,
+          border-color 0.35s ease, box-shadow 0.35s ease;
       }
+
+      @media (prefers-color-scheme: dark) {
+        :root,
+        [data-theme="system"] {
+          color-scheme: dark;
+          --bg-base: #0c0e14;
+          --bg-elevated: rgba(22, 26, 36, 0.92);
+          --bg-muted: rgba(22, 26, 36, 0.65);
+          --bg-hover: rgba(212, 168, 83, 0.1);
+          --bg-active-up: rgba(248, 113, 113, 0.14);
+          --bg-active-down: rgba(74, 222, 128, 0.12);
+          --bg-active-buy: rgba(52, 211, 153, 0.12);
+          --border: rgba(255, 255, 255, 0.07);
+          --border-strong: rgba(255, 255, 255, 0.12);
+          --text-primary: #f5f5f4;
+          --text-secondary: #a8a29e;
+          --text-muted: #78716c;
+          --accent: #d4a853;
+          --accent-hover: #e8bc6a;
+          --accent-soft: rgba(212, 168, 83, 0.15);
+          --accent-text: #e8bc6a;
+          --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+          --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.35);
+          --shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.5);
+          --overlay: rgba(0, 0, 0, 0.65);
+          --grid-dot: rgba(212, 168, 83, 0.04);
+          --chart-bg: #161a24;
+          --chart-grid: #2a2f3d;
+          --chart-text: #d6d3d1;
+          --chart-border: #3f3f46;
+          --badge-neutral-bg: rgba(255, 255, 255, 0.06);
+          --badge-neutral-text: #a8a29e;
+          --badge-neutral-border: rgba(255, 255, 255, 0.08);
+          --code-bg: rgba(255, 255, 255, 0.06);
+          --divider: rgba(255, 255, 255, 0.06);
+          --kline-link: #d4a853;
+        }
+      }
+
+      [data-theme="light"] {
+        color-scheme: light;
+        --bg-base: #f4f2ec;
+        --bg-elevated: rgba(255, 255, 253, 0.88);
+        --bg-muted: rgba(255, 255, 253, 0.55);
+        --bg-hover: rgba(196, 149, 58, 0.08);
+        --bg-active-up: rgba(239, 68, 68, 0.1);
+        --bg-active-down: rgba(34, 197, 94, 0.1);
+        --bg-active-buy: rgba(16, 185, 129, 0.1);
+        --border: rgba(28, 25, 23, 0.08);
+        --border-strong: rgba(28, 25, 23, 0.14);
+        --text-primary: #1c1917;
+        --text-secondary: #57534e;
+        --text-muted: #a8a29e;
+        --accent: #b8860b;
+        --accent-hover: #9a7209;
+        --accent-soft: rgba(184, 134, 11, 0.12);
+        --accent-text: #92680a;
+        --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.04);
+        --shadow-md: 0 4px 24px rgba(28, 25, 23, 0.06);
+        --shadow-lg: 0 12px 48px rgba(28, 25, 23, 0.1);
+        --overlay: rgba(28, 25, 23, 0.45);
+        --grid-dot: rgba(184, 134, 11, 0.07);
+        --chart-bg: #fffdf9;
+        --chart-grid: #ebe6dc;
+        --chart-text: #44403c;
+        --chart-border: #d6d3d1;
+        --badge-neutral-bg: rgba(120, 113, 108, 0.1);
+        --badge-neutral-text: #57534e;
+        --badge-neutral-border: rgba(120, 113, 108, 0.15);
+        --code-bg: rgba(120, 113, 108, 0.08);
+        --divider: rgba(28, 25, 23, 0.06);
+        --kline-link: #b8860b;
+      }
+
+      [data-theme="dark"] {
+        color-scheme: dark;
+        --bg-base: #0c0e14;
+        --bg-elevated: rgba(22, 26, 36, 0.92);
+        --bg-muted: rgba(22, 26, 36, 0.65);
+        --bg-hover: rgba(212, 168, 83, 0.1);
+        --bg-active-up: rgba(248, 113, 113, 0.14);
+        --bg-active-down: rgba(74, 222, 128, 0.12);
+        --bg-active-buy: rgba(52, 211, 153, 0.12);
+        --border: rgba(255, 255, 255, 0.07);
+        --border-strong: rgba(255, 255, 255, 0.12);
+        --text-primary: #f5f5f4;
+        --text-secondary: #a8a29e;
+        --text-muted: #78716c;
+        --accent: #d4a853;
+        --accent-hover: #e8bc6a;
+        --accent-soft: rgba(212, 168, 83, 0.15);
+        --accent-text: #e8bc6a;
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+        --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.35);
+        --shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.5);
+        --overlay: rgba(0, 0, 0, 0.65);
+        --grid-dot: rgba(212, 168, 83, 0.04);
+        --chart-bg: #161a24;
+        --chart-grid: #2a2f3d;
+        --chart-text: #d6d3d1;
+        --chart-border: #3f3f46;
+        --badge-neutral-bg: rgba(255, 255, 255, 0.06);
+        --badge-neutral-text: #a8a29e;
+        --badge-neutral-border: rgba(255, 255, 255, 0.08);
+        --code-bg: rgba(255, 255, 255, 0.06);
+        --divider: rgba(255, 255, 255, 0.06);
+        --kline-link: #d4a853;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: var(--font-sans);
+        background-color: var(--bg-base);
+        background-image:
+          radial-gradient(
+            circle at 1px 1px,
+            var(--grid-dot) 1px,
+            transparent 0
+          ),
+          radial-gradient(
+            ellipse 80% 50% at 50% -20%,
+            var(--accent-soft),
+            transparent
+          );
+        background-size:
+          24px 24px,
+          100% 100%;
+        color: var(--text-primary);
+        -webkit-tap-highlight-color: transparent;
+        transition: var(--transition-theme);
+      }
+
+      .font-mono {
+        font-family: var(--font-mono);
+      }
+
       [v-cloak] {
         display: none;
       }
+
+      .surface {
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+        backdrop-filter: blur(12px);
+        transition: var(--transition-theme);
+      }
+
+      .surface-lg {
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-md);
+        backdrop-filter: blur(16px);
+        transition: var(--transition-theme);
+      }
+
+      .text-theme-primary {
+        color: var(--text-primary);
+      }
+      .text-theme-secondary {
+        color: var(--text-secondary);
+      }
+      .text-theme-muted {
+        color: var(--text-muted);
+      }
+
+      .btn-accent {
+        background: var(--accent);
+        color: #fff;
+        transition:
+          background 0.2s,
+          transform 0.15s,
+          box-shadow 0.2s;
+        box-shadow: 0 2px 8px rgba(184, 134, 11, 0.25);
+      }
+      .btn-accent:hover {
+        background: var(--accent-hover);
+      }
+      .btn-accent:active {
+        transform: scale(0.97);
+      }
+
+      .theme-toggle {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        padding: 3px;
+        background: var(--bg-muted);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        backdrop-filter: blur(8px);
+      }
+      .theme-toggle-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 28px;
+        border: none;
+        border-radius: 7px;
+        background: transparent;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition:
+          background 0.2s,
+          color 0.2s;
+      }
+      .theme-toggle-btn:hover {
+        color: var(--text-secondary);
+      }
+      .theme-toggle-btn.active {
+        background: var(--bg-elevated);
+        color: var(--accent);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .stat-card {
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+        backdrop-filter: blur(8px);
+        transition:
+          var(--transition-theme),
+          transform 0.15s;
+      }
+      .stat-card.is-active-up {
+        background: var(--bg-active-up);
+        border-color: rgba(239, 68, 68, 0.35);
+      }
+      .stat-card.is-active-down {
+        background: var(--bg-active-down);
+        border-color: rgba(34, 197, 94, 0.35);
+      }
+      .stat-card.is-active-buy {
+        background: var(--bg-active-buy);
+        border-color: rgba(16, 185, 129, 0.35);
+      }
+
+      .table-head {
+        background: var(--bg-muted);
+        border-bottom: 1px solid var(--border);
+      }
+      .table-head th {
+        color: var(--text-secondary);
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      .table-row {
+        border-bottom: 1px solid var(--divider);
+        transition: background 0.15s;
+      }
+      .table-row:hover {
+        background: var(--bg-hover);
+      }
+      .table-row:last-child {
+        border-bottom: none;
+      }
+
+      .code-badge {
+        background: var(--code-bg);
+        color: var(--text-secondary);
+        font-family: var(--font-mono);
+      }
+
+      .legend-chip {
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        transition: var(--transition-theme);
+      }
+      .legend-chip.highlight {
+        background: var(--accent-soft);
+        border-color: rgba(184, 134, 11, 0.25);
+        color: var(--accent-text);
+      }
+
+      .kline-link {
+        color: var(--kline-link);
+        font-weight: 500;
+        transition: opacity 0.15s;
+      }
+      .kline-link:hover {
+        opacity: 0.75;
+      }
+
       .sort-icon {
         transition: transform 0.2s;
       }
@@ -30,32 +361,86 @@
         transform: rotate(180deg);
       }
 
-      /* K 线图弹窗 */
       .kline-modal {
         position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
+        inset: 0;
+        background: var(--overlay);
         display: flex;
         align-items: center;
         justify-content: center;
         z-index: 9999;
+        backdrop-filter: blur(4px);
+        animation: fadeIn 0.25s ease;
       }
       .kline-content {
-        background: white;
-        border-radius: 12px;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-strong);
+        border-radius: 16px;
         width: 95%;
         max-width: 800px;
         max-height: 92vh;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
+        box-shadow: var(--shadow-lg);
+        animation: slideUp 0.3s ease;
+      }
+
+      .period-btn {
+        background: var(--code-bg);
+        color: var(--text-secondary);
+        transition:
+          background 0.2s,
+          color 0.2s;
+      }
+      .period-btn.active {
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .badge-neutral {
+        background: var(--badge-neutral-bg);
+        color: var(--badge-neutral-text);
+        border: 1px solid var(--badge-neutral-border);
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .animate-spin {
+        animation: spin 1s linear infinite;
       }
 
       @media (max-width: 768px) {
         .stock-card {
-          @apply bg-white p-2.5 border-b border-gray-200;
+          background: var(--bg-elevated);
+          padding: 0.625rem;
+          border-bottom: 1px solid var(--border);
+          transition:
+            var(--transition-theme),
+            transform 0.15s;
         }
         .hide-on-mobile {
           display: none;
@@ -64,10 +449,10 @@
           display: block;
         }
         .stat-card {
-          @apply p-2;
+          padding: 0.5rem;
         }
         .stat-value {
-          @apply text-lg;
+          font-size: 1.125rem;
         }
       }
       @media (min-width: 769px) {
@@ -78,10 +463,10 @@
           display: none;
         }
         .stat-card {
-          @apply p-4;
+          padding: 1rem;
         }
         .stat-value {
-          @apply text-2xl;
+          font-size: 1.5rem;
         }
       }
       .touch-target {
@@ -99,20 +484,40 @@
       <header class="max-w-7xl mx-auto mb-3 md:mb-6">
         <div class="flex items-center justify-between gap-2">
           <div class="flex-1 min-w-0">
-            <h1 class="text-base md:text-2xl font-bold text-gray-800 truncate">
-              📊 自选股看板
+            <h1
+              class="text-base md:text-2xl font-bold text-theme-primary truncate tracking-tight"
+            >
+              自选股看板
             </h1>
-            <p class="text-[10px] md:text-xs text-gray-500 truncate">
-              价差=(可买入 - 当前价)÷当前价
+            <p
+              class="text-[10px] md:text-xs text-theme-muted truncate font-mono"
+            >
+              价差 = (可买入 − 当前价) ÷ 当前价
             </p>
           </div>
-          <button
-            @click="fetchData"
-            class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-3 py-1.5 md:px-6 md:py-2 rounded-lg text-xs md:text-sm font-medium transition touch-target flex-shrink-0"
-          >
-            <span v-if="loading">🔄</span>
-            <span v-else>🔄 刷新</span>
-          </button>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="theme-toggle" role="group" aria-label="主题切换">
+              <button
+                v-for="opt in themeOptions"
+                :key="opt.value"
+                @click="setTheme(opt.value)"
+                class="theme-toggle-btn"
+                :class="{ active: theme === opt.value }"
+                :title="opt.label"
+                :aria-label="opt.label"
+                :aria-pressed="theme === opt.value"
+              >
+                <span v-html="opt.icon"></span>
+              </button>
+            </div>
+            <button
+              @click="fetchData"
+              class="btn-accent px-3 py-1.5 md:px-5 md:py-2 rounded-lg text-xs md:text-sm font-medium touch-target flex items-center gap-1"
+            >
+              <span :class="{ 'animate-spin inline-block': loading }">↻</span>
+              <span class="hidden sm:inline">刷新</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -120,83 +525,114 @@
         <!-- 统计卡片 -->
         <div class="grid grid-cols-5 gap-1.5 md:gap-4 mb-3 md:mb-6">
           <!-- 数量：不可排序 -->
-          <div
-            class="bg-white stat-card rounded-lg shadow-sm border border-gray-100 text-center"
-          >
-            <div class="text-[9px] md:text-xs text-gray-500 mb-0.5 md:mb-1">
+          <div class="stat-card rounded-xl text-center">
+            <div class="text-[9px] md:text-xs text-theme-muted mb-0.5 md:mb-1">
               数量
             </div>
-            <div class="stat-value font-bold text-gray-800">
+            <div class="stat-value font-bold text-theme-primary font-mono">
               {{ stockList.length }}
             </div>
           </div>
 
           <!-- 涨：点击按涨跌幅降序（最涨在前） -->
           <div
-            class="stat-card rounded-lg shadow-sm border text-center cursor-pointer select-none active:scale-95 transition-transform"
-            :class="sortKey === 'percent' && sortOrder === 'desc'
-              ? 'bg-red-50 border-red-300'
-              : 'bg-white border-gray-100'"
+            class="stat-card rounded-xl text-center cursor-pointer select-none active:scale-95"
+            :class="sortKey === 'percent' && sortOrder === 'desc' ? 'is-active-up' : ''"
             @click="sortByDefault('percent', 'desc')"
           >
-            <div class="text-[9px] md:text-xs mb-0.5 md:mb-1 flex items-center justify-center gap-0.5"
-              :class="sortKey === 'percent' && sortOrder === 'desc' ? 'text-red-500 font-semibold' : 'text-gray-500'"
+            <div
+              class="text-[9px] md:text-xs mb-0.5 md:mb-1 flex items-center justify-center gap-0.5"
+              :class="sortKey === 'percent' && sortOrder === 'desc' ? 'text-red-500 font-semibold' : 'text-theme-muted'"
             >
-              🔴涨
-              <svg v-if="sortKey === 'percent' && sortOrder === 'desc'" class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/>
+              涨
+              <svg
+                v-if="sortKey === 'percent' && sortOrder === 'desc'"
+                class="w-2.5 h-2.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2.5"
+                  d="M5 15l7-7 7 7"
+                />
               </svg>
             </div>
-            <div class="stat-value font-bold text-red-500">{{ upCount }}</div>
+            <div class="stat-value font-bold text-red-500 font-mono">
+              {{ upCount }}
+            </div>
           </div>
 
           <!-- 跌：点击按涨跌幅升序（最跌在前） -->
           <div
-            class="stat-card rounded-lg shadow-sm border text-center cursor-pointer select-none active:scale-95 transition-transform"
-            :class="sortKey === 'percent' && sortOrder === 'asc'
-              ? 'bg-green-50 border-green-300'
-              : 'bg-white border-gray-100'"
+            class="stat-card rounded-xl text-center cursor-pointer select-none active:scale-95"
+            :class="sortKey === 'percent' && sortOrder === 'asc' ? 'is-active-down' : ''"
             @click="sortByDefault('percent', 'asc')"
           >
-            <div class="text-[9px] md:text-xs mb-0.5 md:mb-1 flex items-center justify-center gap-0.5"
-              :class="sortKey === 'percent' && sortOrder === 'asc' ? 'text-green-600 font-semibold' : 'text-gray-500'"
+            <div
+              class="text-[9px] md:text-xs mb-0.5 md:mb-1 flex items-center justify-center gap-0.5"
+              :class="sortKey === 'percent' && sortOrder === 'asc' ? 'text-green-500 font-semibold' : 'text-theme-muted'"
             >
-              🟢跌
-              <svg v-if="sortKey === 'percent' && sortOrder === 'asc'" class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+              跌
+              <svg
+                v-if="sortKey === 'percent' && sortOrder === 'asc'"
+                class="w-2.5 h-2.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2.5"
+                  d="M19 9l-7 7-7-7"
+                />
               </svg>
             </div>
-            <div class="stat-value font-bold text-green-600">{{ downCount }}</div>
+            <div class="stat-value font-bold text-green-500 font-mono">
+              {{ downCount }}
+            </div>
           </div>
 
           <!-- 买：点击按价差降序（价差最大在前） -->
           <div
-            class="stat-card rounded-lg shadow-sm border text-center cursor-pointer select-none active:scale-95 transition-transform"
-            :class="sortKey === 'priceDiff'
-              ? 'bg-emerald-50 border-emerald-300'
-              : 'bg-white border-gray-100'"
+            class="stat-card rounded-xl text-center cursor-pointer select-none active:scale-95"
+            :class="sortKey === 'priceDiff' ? 'is-active-buy' : ''"
             @click="sortByDefault('priceDiff', 'desc')"
           >
-            <div class="text-[9px] md:text-xs mb-0.5 md:mb-1 flex items-center justify-center gap-0.5"
-              :class="sortKey === 'priceDiff' ? 'text-emerald-600 font-semibold' : 'text-gray-500'"
+            <div
+              class="text-[9px] md:text-xs mb-0.5 md:mb-1 flex items-center justify-center gap-0.5"
+              :class="sortKey === 'priceDiff' ? 'text-emerald-500 font-semibold' : 'text-theme-muted'"
             >
-              ✅买
-              <svg v-if="sortKey === 'priceDiff'" class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                  :d="sortOrder === 'desc' ? 'M19 9l-7 7-7-7' : 'M5 15l7-7 7 7'"/>
+              买
+              <svg
+                v-if="sortKey === 'priceDiff'"
+                class="w-2.5 h-2.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2.5"
+                  :d="sortOrder === 'desc' ? 'M19 9l-7 7-7-7' : 'M5 15l7-7 7 7'"
+                />
               </svg>
             </div>
-            <div class="stat-value font-bold text-emerald-600">{{ buyableCount }}</div>
+            <div class="stat-value font-bold text-emerald-500 font-mono">
+              {{ buyableCount }}
+            </div>
           </div>
 
           <!-- 等：不可排序 -->
-          <div
-            class="bg-white stat-card rounded-lg shadow-sm border border-gray-100 text-center"
-          >
-            <div class="text-[9px] md:text-xs text-gray-500 mb-0.5 md:mb-1">
-              ⏳等
+          <div class="stat-card rounded-xl text-center">
+            <div class="text-[9px] md:text-xs text-theme-muted mb-0.5 md:mb-1">
+              等
             </div>
-            <div class="stat-value font-bold text-orange-500">
+            <div class="stat-value font-bold text-amber-500 font-mono">
               {{ waitingCount }}
             </div>
           </div>
@@ -224,19 +660,17 @@
         </div> -->
 
         <!-- 桌面端表格 -->
-        <div
-          class="bg-white rounded-xl shadow-lg overflow-hidden hide-on-mobile"
-        >
+        <div class="surface-lg rounded-2xl overflow-hidden hide-on-mobile">
           <div class="overflow-x-auto smooth-scroll">
             <table class="w-full text-left">
-              <thead class="bg-gray-50">
+              <thead class="table-head">
                 <tr>
-                  <th class="p-4 font-semibold text-sm">股票</th>
-                  <th class="p-4 font-semibold text-sm">代码</th>
-                  <th class="p-4 font-semibold text-sm text-right">可买入价</th>
-                  <th class="p-4 font-semibold text-sm text-right">当前价</th>
-                   <th
-                    class="p-4 font-semibold text-sm text-right cursor-pointer hover:bg-gray-100 transition select-none touch-target"
+                  <th class="p-4 text-sm">股票</th>
+                  <th class="p-4 text-sm">代码</th>
+                  <th class="p-4 text-sm text-right">可买入价</th>
+                  <th class="p-4 text-sm text-right">当前价</th>
+                  <th
+                    class="p-4 text-sm text-right cursor-pointer transition select-none touch-target hover:bg-[var(--bg-hover)]"
                     @click="sortBy('priceDiff')"
                     :class="{ 'sort-asc': sortKey === 'priceDiff' && sortOrder === 'asc' }"
                   >
@@ -274,7 +708,7 @@
                   </th>
                   <!-- <th class="p-4 font-semibold text-sm text-right">涨跌额</th> -->
                   <th
-                    class="p-4 font-semibold text-sm text-right cursor-pointer hover:bg-gray-100 transition select-none touch-target"
+                    class="p-4 text-sm text-right cursor-pointer transition select-none touch-target hover:bg-[var(--bg-hover)]"
                     @click="sortBy('percent')"
                     :class="{ 'sort-asc': sortKey === 'percent' && sortOrder === 'asc' }"
                   >
@@ -310,34 +744,29 @@
                       </svg>
                     </span>
                   </th>
-                  <th class="p-4 font-semibold text-sm text-right">成交量</th>
-                 
-                  <th class="p-4 font-semibold text-sm text-right">
-                    最高/最低
-                  </th>
-                  <th class="p-4 font-semibold text-sm text-right">
-                    K线
-                  </th>
+                  <th class="p-4 text-sm text-right">成交量</th>
+
+                  <th class="p-4 text-sm text-right">最高/最低</th>
+                  <th class="p-4 text-sm text-right">K线</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-gray-100">
+              <tbody>
                 <tr
                   v-for="stock in sortedStocks"
                   :key="stock.code"
-                  class="hover:bg-blue-50 transition cursor-pointer"
+                  class="table-row cursor-pointer"
                   @click="jumpToTXCJ(stock)"
                 >
-                  <td class="p-4 font-bold text-gray-800 text-sm">
+                  <td class="p-4 font-bold text-theme-primary text-sm">
                     {{ stock.name }}
                   </td>
                   <td class="p-4">
-                    <span
-                      class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded font-mono"
+                    <span class="code-badge text-xs px-2 py-1 rounded"
                       >{{ stock.displayCode }}</span
                     >
                   </td>
-                       <td
-                    class="p-4 text-right font-mono font-medium text-gray-700 text-sm"
+                  <td
+                    class="p-4 text-right font-mono font-medium text-theme-secondary text-sm"
                   >
                     {{ formatPrice(stock.canBuy) }}
                   </td>
@@ -347,7 +776,7 @@
                   >
                     {{ formatPrice(stock.current) }}
                   </td>
-                   <td class="p-4 text-right">
+                  <td class="p-4 text-right">
                     <span
                       class="px-2 py-1 rounded text-xs font-medium inline-block min-w-[70px]"
                       :class="getPriceDiffClass(stock.priceDiff)"
@@ -370,22 +799,25 @@
                       stock.percent.toFixed(2) }}%</span
                     >
                   </td>
-                  <td class="p-4 text-right text-xs text-gray-600">
+                  <td
+                    class="p-4 text-right text-xs text-theme-secondary font-mono"
+                  >
                     {{ formatVolume(stock.volume) }}
                   </td>
-             
-                 
-                  <td class="p-4 text-right text-xs">
+
+                  <td class="p-4 text-right text-xs font-mono">
                     <span :class="getColorClass(stock.change)"
                       >{{ formatPrice(stock.high) }}</span
-                    ><span class="text-gray-300 mx-1">/</span
+                    ><span class="text-theme-muted mx-1">/</span
                     ><span :class="getColorClass(stock.change)"
                       >{{ formatPrice(stock.low) }}</span
                     >
                   </td>
-                  <td class="p-4 text-right text-xs" style="color: #148eff" @click="showKLine(stock, $event)">
+                  <td
+                    class="p-4 text-right text-xs kline-link"
+                    @click="showKLine(stock, $event)"
+                  >
                     查看K线
-                  </td>
                   </td>
                 </tr>
               </tbody>
@@ -402,10 +834,10 @@
             >
               <div class="flex justify-between items-start mb-1.5">
                 <div class="flex-1 min-w-0 pr-2">
-                  <div class="font-bold text-gray-800 text-sm truncate">
+                  <div class="font-bold text-theme-primary text-sm truncate">
                     {{ stock.name }}
                   </div>
-                  <div class="text-[10px] text-gray-500 mt-0.5">
+                  <div class="text-[10px] text-theme-muted mt-0.5 font-mono">
                     {{ stock.displayCode }}
                   </div>
                 </div>
@@ -440,20 +872,22 @@
                 >
               </div>
               <div
-                class="flex justify-between items-center text-[10px] border-t border-gray-100 pt-1.5"
+                class="flex justify-between items-center text-[10px] border-t pt-1.5"
+                style="border-color: var(--divider)"
               >
                 <div class="truncate pr-2">
-                  <span class="text-gray-500">可买:</span
-                  ><span class="font-mono font-medium text-gray-700 ml-0.5"
+                  <span class="text-theme-muted">可买:</span
+                  ><span
+                    class="font-mono font-medium text-theme-secondary ml-0.5"
                     >{{ formatPrice(stock.canBuy) }}</span
                   >
                 </div>
-                <div class="truncate text-gray-600">
+                <div class="truncate text-theme-secondary font-mono">
                   量：{{ formatVolume(stock.volume) }}
                 </div>
               </div>
               <div
-                class="flex justify-between items-center text-[10px] text-gray-500 mt-1"
+                class="flex justify-between items-center text-[10px] text-theme-muted mt-1"
               >
                 <span
                   >高：<span
@@ -476,28 +910,28 @@
 
         <!-- 图例说明 -->
         <div
-          class="mt-3 md:mt-4 flex flex-wrap gap-1.5 md:gap-4 text-[10px] md:text-xs text-gray-500"
+          class="mt-3 md:mt-4 flex flex-wrap gap-1.5 md:gap-3 text-[10px] md:text-xs text-theme-muted"
         >
           <span
-            class="flex items-center gap-1 bg-white px-1.5 py-1 md:px-2 md:py-1.5 rounded border border-gray-200"
+            class="legend-chip flex items-center gap-1.5 px-2 py-1 md:px-2.5 md:py-1.5 rounded-lg"
           >
             <span
-              class="w-2 h-2 md:w-3 md:h-3 rounded bg-emerald-100 border border-emerald-300 flex-shrink-0"
+              class="w-2 h-2 md:w-2.5 md:h-2.5 rounded bg-emerald-500/20 border border-emerald-500/40 flex-shrink-0"
             ></span>
-            <span class="truncate">价差>0：可关注</span>
+            <span class="truncate">价差 &gt; 0：可关注</span>
           </span>
           <span
-            class="flex items-center gap-1 bg-white px-1.5 py-1 md:px-2 md:py-1.5 rounded border border-gray-200"
+            class="legend-chip flex items-center gap-1.5 px-2 py-1 md:px-2.5 md:py-1.5 rounded-lg"
           >
             <span
-              class="w-2 h-2 md:w-3 md:h-3 rounded bg-red-100 border border-red-300 flex-shrink-0"
+              class="w-2 h-2 md:w-2.5 md:h-2.5 rounded bg-red-500/20 border border-red-500/40 flex-shrink-0"
             ></span>
-            <span class="truncate">价差<0：建议等待</span>
+            <span class="truncate">价差 &lt; 0：建议等待</span>
           </span>
           <span
-            class="flex items-center gap-1 bg-blue-50 px-1.5 py-1 md:px-2 md:py-1.5 rounded border border-blue-200"
+            class="legend-chip highlight flex items-center gap-1 px-2 py-1 md:px-2.5 md:py-1.5 rounded-lg"
           >
-            <span class="text-[10px] md:text-xs">📈 点击股票查看 K 线图</span>
+            <span>点击股票行跳转详情 · K 线单独查看</span>
           </span>
         </div>
       </main>
@@ -507,20 +941,21 @@
         <div class="kline-content" @click.stop>
           <!-- 弹窗头部 -->
           <div
-            class="flex justify-between items-center p-3 md:p-4 border-b border-gray-200"
+            class="flex justify-between items-center p-3 md:p-4 border-b"
+            style="border-color: var(--border)"
           >
             <div>
-              <h2 class="text-base md:text-lg font-bold">
+              <h2 class="text-base md:text-lg font-bold text-theme-primary">
                 {{ selectedStock?.name }} ({{ selectedStock?.displayCode }})
               </h2>
-              <p class="text-xs text-gray-500">
-                当前价：{{ formatPrice(selectedStock?.current) }} | 价差：{{
+              <p class="text-xs text-theme-muted font-mono">
+                当前价：{{ formatPrice(selectedStock?.current) }} · 价差：{{
                 selectedStock?.priceDiff?.toFixed(2) }}%
               </p>
             </div>
             <button
               @click="closeKLine"
-              class="text-gray-500 hover:text-gray-700 text-2xl"
+              class="text-theme-muted hover:text-theme-primary text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--bg-hover)] transition"
             >
               ×
             </button>
@@ -528,14 +963,15 @@
 
           <!-- K 线周期选择 -->
           <div
-            class="flex gap-2 p-2 md:p-3 border-b border-gray-200 overflow-x-auto"
+            class="flex gap-2 p-2 md:p-3 border-b overflow-x-auto"
+            style="border-color: var(--border)"
           >
             <button
               v-for="period in periods"
               :key="period.value"
               @click="changePeriod(period.value)"
-              :class="klinePeriod === period.value ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'"
-              class="px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap transition"
+              :class="klinePeriod === period.value ? 'active' : ''"
+              class="period-btn px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap"
             >
               {{ period.label }}
             </button>
@@ -548,8 +984,8 @@
               style="width: 100%"
               class="h-[240px] md:h-[420px]"
             ></div>
-            <div v-if="klineLoading" class="text-center py-8 text-gray-500">
-              📊 加载中...
+            <div v-if="klineLoading" class="text-center py-8 text-theme-muted">
+              加载中…
             </div>
             <div
               v-if="klineError"
@@ -571,33 +1007,188 @@
     </div>
 
     <script>
-      const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+      const {
+        createApp,
+        ref,
+        computed,
+        onMounted,
+        onUnmounted,
+        nextTick,
+        watch,
+      } = Vue;
       createApp({
         setup() {
           const stockList = ref([
-            { code: "sh601118", name: "海南橡胶", canBuy: 6.0,  tags: ["化工", "橡胶", "农业"] , time: '2026-03-06' },
-            { code: "sh603977", name: "国泰集团", canBuy: 13.0, tags: ["航空", "军工"] , time: '2026-03-06' },
-            { code: "sh600500", name: "中化国际", canBuy: 4.0,  tags: ["化工", "贸易", "央企"] , time: '2026-03-06' },
-            { code: "sh601618", name: "中国中冶", canBuy: 3.15, tags: ["建筑", "冶金", "央企"] , time: '2026-03-06' },
-            { code: "sh603227", name: "雪峰科技", canBuy: 7.5,  tags: ["爆破", "工程"] , time: '2026-03-06' },
-            { code: "sh688707", name: "振华新材", canBuy: 13.0, tags: ["新材料", "锂电", "科创板"] , time: '2026-03-06' },
-            { code: "sz002408", name: "齐翔腾达", canBuy: 5.5,  tags: ["化工", "丙烷"] , time: '2026-03-06' },
-            { code: "sz002100", name: "天康生物", canBuy: 7.0,  tags: ["农业", "养殖", "生物"] , time: '2026-03-06' },
-            { code: "sz300034", name: "钢研高纳", canBuy: 20, tags: ["新材料", "航空", "军工"] , time: '2026-03-06' },
-            { code: "sz002783", name: "凯龙股份", canBuy: 9.0,  tags: ["化工", "爆破"] , time: '2026-03-06' },
-            { code: "sz000928", name: "中钢国际", canBuy: 6.8,  tags: ["冶金", "工程", "央企"] , time: '2026-03-06' },
-            { code: "sz002136", name: "安 纳 达",  canBuy: 12.0, tags: ["化工", "钛白粉"] , time: '2026-03-06' },
-            { code: "sz000707", name: "双环科技", canBuy: 6.2,  tags: ["化工", "尼龙"] , time: '2026-03-06' },
-            { code: "sz000731", name: "四川美丰", canBuy: 7.2,  tags: ["化工", "化肥", "农业"] , time: '2026-03-06' },
-            { code: "sh600459", name: "贵研铂业", canBuy: 20,   tags: ["贵金属", "新材料", "化工"] , time: '2026-03-09' },
-            { code: "sz002237", name: "恒邦股份", canBuy: 15.5,   tags: ["贵金属", "白银"] , time: '2026-03-23' },
-            { code: "sh600028", name: "中国石化", canBuy: 5.2,   tags: ["石油", "天然气"] , time: '2026-05-13' },
+            {
+              code: "sh601118",
+              name: "海南橡胶",
+              canBuy: 6.0,
+              tags: ["化工", "橡胶", "农业"],
+              time: "2026-03-06",
+            },
+            {
+              code: "sh603977",
+              name: "国泰集团",
+              canBuy: 13.0,
+              tags: ["航空", "军工"],
+              time: "2026-03-06",
+            },
+            {
+              code: "sh600500",
+              name: "中化国际",
+              canBuy: 4.0,
+              tags: ["化工", "贸易", "央企"],
+              time: "2026-03-06",
+            },
+            {
+              code: "sh601618",
+              name: "中国中冶",
+              canBuy: 3.15,
+              tags: ["建筑", "冶金", "央企"],
+              time: "2026-03-06",
+            },
+            {
+              code: "sh603227",
+              name: "雪峰科技",
+              canBuy: 7.5,
+              tags: ["爆破", "工程"],
+              time: "2026-03-06",
+            },
+            {
+              code: "sh688707",
+              name: "振华新材",
+              canBuy: 13.0,
+              tags: ["新材料", "锂电", "科创板"],
+              time: "2026-03-06",
+            },
+            {
+              code: "sz002408",
+              name: "齐翔腾达",
+              canBuy: 5.5,
+              tags: ["化工", "丙烷"],
+              time: "2026-03-06",
+            },
+            {
+              code: "sz002100",
+              name: "天康生物",
+              canBuy: 7.0,
+              tags: ["农业", "养殖", "生物"],
+              time: "2026-03-06",
+            },
+            {
+              code: "sz300034",
+              name: "钢研高纳",
+              canBuy: 20,
+              tags: ["新材料", "航空", "军工"],
+              time: "2026-03-06",
+            },
+            {
+              code: "sz002783",
+              name: "凯龙股份",
+              canBuy: 9.0,
+              tags: ["化工", "爆破"],
+              time: "2026-03-06",
+            },
+            {
+              code: "sz000928",
+              name: "中钢国际",
+              canBuy: 6.8,
+              tags: ["冶金", "工程", "央企"],
+              time: "2026-03-06",
+            },
+            {
+              code: "sz002136",
+              name: "安 纳 达",
+              canBuy: 12.0,
+              tags: ["化工", "钛白粉"],
+              time: "2026-03-06",
+            },
+            {
+              code: "sz000707",
+              name: "双环科技",
+              canBuy: 6.2,
+              tags: ["化工", "尼龙"],
+              time: "2026-03-06",
+            },
+            {
+              code: "sz000731",
+              name: "四川美丰",
+              canBuy: 7.2,
+              tags: ["化工", "化肥", "农业"],
+              time: "2026-03-06",
+            },
+            {
+              code: "sh600459",
+              name: "贵研铂业",
+              canBuy: 20,
+              tags: ["贵金属", "新材料", "化工"],
+              time: "2026-03-09",
+            },
+            {
+              code: "sz002237",
+              name: "恒邦股份",
+              canBuy: 15.5,
+              tags: ["贵金属", "白银"],
+              time: "2026-03-23",
+            },
+            {
+              code: "sh600028",
+              name: "中国石化",
+              canBuy: 5.2,
+              tags: ["石油", "天然气"],
+              time: "2026-05-13",
+            },
           ]);
 
           const rawData = ref({});
           const loading = ref(false);
           const sortKey = ref("priceDiff");
           const sortOrder = ref("desc");
+
+          // 主题：system | light | dark，默认跟随系统
+          const theme = ref(localStorage.getItem("stock-theme") || "system");
+          const themeOptions = [
+            {
+              value: "light",
+              label: "浅色",
+              icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>',
+            },
+            {
+              value: "dark",
+              label: "深色",
+              icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
+            },
+            {
+              value: "system",
+              label: "跟随系统",
+              icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
+            },
+          ];
+
+          const getCssVar = (name) =>
+            getComputedStyle(document.documentElement)
+              .getPropertyValue(name)
+              .trim();
+
+          const setTheme = (value) => {
+            theme.value = value;
+            document.documentElement.setAttribute("data-theme", value);
+            localStorage.setItem("stock-theme", value);
+            if (showKLineModal.value && klineData.value.length) {
+              nextTick(() => drawKLineChart());
+            }
+          };
+
+          let systemThemeMq = null;
+          const onSystemThemeChange = () => {
+            if (
+              theme.value === "system" &&
+              showKLineModal.value &&
+              klineData.value.length
+            ) {
+              nextTick(() => drawKLineChart());
+            }
+          };
 
           // ✅ K 线图相关
           const showKLineModal = ref(false);
@@ -742,33 +1333,38 @@
           const drawKLineChart = () => {
             if (!document.getElementById("kline-chart")) return;
 
-            // 销毁旧图表
             if (chart) {
               chart.remove();
             }
 
-            // 创建新图表
             const chartEl = document.getElementById("kline-chart");
-            const chartHeight = chartEl.clientHeight || (window.innerWidth < 768 ? 240 : 420);
+            const chartHeight =
+              chartEl.clientHeight || (window.innerWidth < 768 ? 240 : 420);
+            const chartBg = getCssVar("--chart-bg") || "#fffdf9";
+            const chartText = getCssVar("--chart-text") || "#44403c";
+            const chartGrid = getCssVar("--chart-grid") || "#ebe6dc";
+            const chartBorder = getCssVar("--chart-border") || "#d6d3d1";
+            const accent = getCssVar("--accent") || "#b8860b";
+
             chart = LightweightCharts.createChart(chartEl, {
               width: chartEl.clientWidth,
               height: chartHeight,
               layout: {
-                background: { type: "solid", color: "#ffffff" },
-                textColor: "#333",
+                background: { type: "solid", color: chartBg },
+                textColor: chartText,
               },
               grid: {
-                vertLines: { color: "#f0f0f0" },
-                horzLines: { color: "#f0f0f0" },
+                vertLines: { color: chartGrid },
+                horzLines: { color: chartGrid },
               },
               crosshair: {
                 mode: LightweightCharts.CrosshairMode.Normal,
               },
               rightPriceScale: {
-                borderColor: "#e0e0e0",
+                borderColor: chartBorder,
               },
               timeScale: {
-                borderColor: "#e0e0e0",
+                borderColor: chartBorder,
                 timeVisible: true,
               },
             });
@@ -781,8 +1377,8 @@
               borderDownColor: "#22c55e",
               wickUpColor: "#ef4444",
               wickDownColor: "#22c55e",
-              lastValueVisible: false,  // 隐藏当前价格线
-              priceLineVisible: false,  // 隐藏当前价格水平线
+              lastValueVisible: false, // 隐藏当前价格线
+              priceLineVisible: false, // 隐藏当前价格水平线
             });
             // K线价格轴：底部留 28% 给成交量
             chart.priceScale("right").applyOptions({
@@ -825,7 +1421,7 @@
             if (canBuy && canBuy > 0) {
               candlestickSeries.createPriceLine({
                 price: canBuy,
-                color: "#f59e0b",
+                color: accent,
                 lineWidth: 1,
                 lineStyle: LightweightCharts.LineStyle.Dashed,
                 axisLabelVisible: true,
@@ -893,7 +1489,9 @@
           const selectedTags = ref([]);
           const allTags = computed(() => {
             const set = new Set();
-            stockList.value.forEach((s) => (s.tags || []).forEach((t) => set.add(t)));
+            stockList.value.forEach((s) =>
+              (s.tags || []).forEach((t) => set.add(t)),
+            );
             return [...set].sort();
           });
           const toggleTag = (tag) => {
@@ -901,7 +1499,9 @@
             if (idx === -1) selectedTags.value.push(tag);
             else selectedTags.value.splice(idx, 1);
           };
-          const clearTagFilter = () => { selectedTags.value = []; };
+          const clearTagFilter = () => {
+            selectedTags.value = [];
+          };
 
           const sortedStocks = computed(() => {
             let list = processedStocks.value;
@@ -942,19 +1542,23 @@
             return v.toLocaleString();
           };
           const getColorClass = (v) =>
-            v > 0 ? "text-red-500" : v < 0 ? "text-green-600" : "text-gray-700";
+            v > 0
+              ? "text-red-500"
+              : v < 0
+                ? "text-green-500"
+                : "text-theme-secondary";
           const getBadgeClass = (v) =>
             v > 0
-              ? "bg-red-50 text-red-600 border border-red-100"
+              ? "bg-red-500/10 text-red-500 border border-red-500/20"
               : v < 0
-                ? "bg-green-50 text-green-600 border border-green-100"
-                : "bg-gray-100 text-gray-600";
+                ? "bg-green-500/10 text-green-500 border border-green-500/20"
+                : "badge-neutral";
           const getPriceDiffClass = (v) =>
             v > 0
-              ? "bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold"
+              ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/25 font-semibold"
               : v < 0
-                ? "bg-red-50 text-red-600 border border-red-100"
-                : "bg-gray-100 text-gray-600";
+                ? "bg-red-500/10 text-red-500 border border-red-500/20"
+                : "badge-neutral";
           const sortBy = (key) => {
             if (sortKey.value === key) {
               sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
@@ -977,6 +1581,14 @@
           onMounted(() => {
             fetchData();
             setInterval(fetchData, 3000);
+            systemThemeMq = window.matchMedia("(prefers-color-scheme: dark)");
+            systemThemeMq.addEventListener("change", onSystemThemeChange);
+          });
+
+          onUnmounted(() => {
+            if (systemThemeMq) {
+              systemThemeMq.removeEventListener("change", onSystemThemeChange);
+            }
           });
 
           function jumpToTXCJ(stock) {
@@ -1017,6 +1629,9 @@
             closeKLine,
             changePeriod,
             jumpToTXCJ,
+            theme,
+            themeOptions,
+            setTheme,
           };
         },
       }).mount("#app");
