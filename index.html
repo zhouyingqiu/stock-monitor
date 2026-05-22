@@ -62,6 +62,7 @@
         --code-bg: rgba(120, 113, 108, 0.08);
         --divider: rgba(28, 25, 23, 0.06);
         --kline-link: #b8860b;
+        --grain: rgba(28, 25, 23, 0.025);
         --transition-theme:
           background-color 0.35s ease, color 0.35s ease,
           border-color 0.35s ease, box-shadow 0.35s ease;
@@ -102,6 +103,7 @@
           --code-bg: rgba(255, 255, 255, 0.06);
           --divider: rgba(255, 255, 255, 0.06);
           --kline-link: #d4a853;
+          --grain: rgba(255, 255, 255, 0.02);
         }
       }
 
@@ -138,6 +140,7 @@
         --code-bg: rgba(120, 113, 108, 0.08);
         --divider: rgba(28, 25, 23, 0.06);
         --kline-link: #b8860b;
+        --grain: rgba(28, 25, 23, 0.025);
       }
 
       [data-theme="dark"] {
@@ -173,6 +176,7 @@
         --code-bg: rgba(255, 255, 255, 0.06);
         --divider: rgba(255, 255, 255, 0.06);
         --kline-link: #d4a853;
+        --grain: rgba(255, 255, 255, 0.02);
       }
 
       * {
@@ -199,6 +203,93 @@
         color: var(--text-primary);
         -webkit-tap-highlight-color: transparent;
         transition: var(--transition-theme);
+        position: relative;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.45;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+        mix-blend-mode: overlay;
+      }
+      #app {
+        position: relative;
+        z-index: 1;
+      }
+
+      .page-header {
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.75rem;
+      }
+      .page-header::after {
+        content: "";
+        display: block;
+        width: 2.5rem;
+        height: 2px;
+        margin-top: 0.5rem;
+        background: linear-gradient(90deg, var(--accent), transparent);
+        border-radius: 1px;
+      }
+
+      @keyframes statIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .stat-card:nth-child(1) {
+        animation-delay: 0.04s;
+      }
+      .stat-card:nth-child(2) {
+        animation-delay: 0.08s;
+      }
+      .stat-card:nth-child(3) {
+        animation-delay: 0.12s;
+      }
+      .stat-card:nth-child(4) {
+        animation-delay: 0.16s;
+      }
+      .stat-card:nth-child(5) {
+        animation-delay: 0.2s;
+      }
+
+      .mobile-kline-btn {
+        font-size: 10px;
+        padding: 0.2rem 0.5rem;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        color: var(--kline-link);
+        background: var(--accent-soft);
+        font-weight: 500;
+        transition: opacity 0.15s;
+      }
+      .mobile-kline-btn:active {
+        opacity: 0.7;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+        .stat-card {
+          animation: none;
+        }
+      }
+
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
       }
 
       .font-mono {
@@ -250,6 +341,58 @@
       .btn-accent:active {
         transform: scale(0.97);
       }
+      .btn-accent:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .live-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #22c55e;
+        box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+        animation: pulse 2s ease-in-out infinite;
+        flex-shrink: 0;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.45;
+        }
+      }
+
+      .table-wrap {
+        max-height: calc(100vh - 220px);
+        overflow: auto;
+      }
+
+      .mobile-list {
+        border-radius: 1rem;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-md);
+      }
+
+      .chart-area {
+        position: relative;
+      }
+      .chart-loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--chart-bg);
+        color: var(--text-muted);
+        font-size: 0.875rem;
+        border-radius: 8px;
+        z-index: 1;
+      }
 
       .theme-toggle {
         display: flex;
@@ -293,6 +436,7 @@
         transition:
           var(--transition-theme),
           transform 0.15s;
+        animation: statIn 0.45s ease backwards;
       }
       .stat-card.is-active-up {
         background: var(--bg-active-up);
@@ -312,6 +456,11 @@
         border-bottom: 1px solid var(--border);
       }
       .table-head th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: var(--bg-muted);
+        backdrop-filter: blur(8px);
         color: var(--text-secondary);
         font-weight: 600;
         letter-spacing: 0.02em;
@@ -481,18 +630,23 @@
   <body>
     <div id="app" v-cloak class="min-h-screen p-2 md:p-4 lg:p-8">
       <!-- 头部 -->
-      <header class="max-w-7xl mx-auto mb-3 md:mb-6">
+      <header class="max-w-7xl mx-auto mb-3 md:mb-6 page-header">
         <div class="flex items-center justify-between gap-2">
           <div class="flex-1 min-w-0">
-            <h1
-              class="text-base md:text-2xl font-bold text-theme-primary truncate tracking-tight"
-            >
-              自选股看板
-            </h1>
+            <div class="flex items-center gap-2 mb-0.5">
+              <span class="live-dot" aria-hidden="true"></span>
+              <h1
+                class="text-base md:text-2xl font-bold text-theme-primary truncate tracking-tight"
+              >
+                自选股看板
+              </h1>
+            </div>
             <p
-              class="text-[10px] md:text-xs text-theme-muted truncate font-mono"
+              class="text-[10px] md:text-xs text-theme-muted truncate font-mono pl-[14px]"
             >
               价差 = (可买入 − 当前价) ÷ 当前价
+              <span v-if="lastUpdated" class="mx-1 opacity-40">·</span>
+              <span v-if="lastUpdated">{{ lastUpdated }} 更新</span>
             </p>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
@@ -512,6 +666,7 @@
             </div>
             <button
               @click="fetchData"
+              :disabled="loading"
               class="btn-accent px-3 py-1.5 md:px-5 md:py-2 rounded-lg text-xs md:text-sm font-medium touch-target flex items-center gap-1"
             >
               <span :class="{ 'animate-spin inline-block': loading }">↻</span>
@@ -661,7 +816,7 @@
 
         <!-- 桌面端表格 -->
         <div class="surface-lg rounded-2xl overflow-hidden hide-on-mobile">
-          <div class="overflow-x-auto smooth-scroll">
+          <div class="overflow-x-auto smooth-scroll table-wrap">
             <table class="w-full text-left">
               <thead class="table-head">
                 <tr>
@@ -826,8 +981,8 @@
         </div>
 
         <!-- 移动端卡片列表 -->
-        <div class="mobile-only">
-          <div v-for="(stock, index) in sortedStocks" :key="stock.code">
+        <div class="mobile-only mobile-list">
+          <div v-for="stock in sortedStocks" :key="stock.code">
             <div
               class="stock-card active:scale-[0.98] transition-transform"
               @click="jumpToTXCJ(stock)"
@@ -903,6 +1058,12 @@
                     >{{ formatPrice(stock.low) }}</span
                   ></span
                 >
+                <button
+                  class="mobile-kline-btn flex-shrink-0"
+                  @click="showKLine(stock, $event)"
+                >
+                  K线
+                </button>
               </div>
             </div>
           </div>
@@ -937,7 +1098,14 @@
       </main>
 
       <!-- ✅ 新增：K 线图弹窗 -->
-      <div v-if="showKLineModal" class="kline-modal" @click="closeKLine">
+      <div
+        v-if="showKLineModal"
+        class="kline-modal"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="selectedStock?.name + ' K线图'"
+        @click="closeKLine"
+      >
         <div class="kline-content" @click.stop>
           <!-- 弹窗头部 -->
           <div
@@ -979,28 +1147,20 @@
 
           <!-- K 线图容器 -->
           <div class="p-2 md:p-4">
-            <div
-              id="kline-chart"
-              style="width: 100%"
-              class="h-[240px] md:h-[420px]"
-            ></div>
-            <div v-if="klineLoading" class="text-center py-8 text-theme-muted">
-              加载中…
+            <div class="chart-area">
+              <div
+                id="kline-chart"
+                style="width: 100%"
+                class="h-[240px] md:h-[420px]"
+              ></div>
+              <div v-if="klineLoading" class="chart-loading">加载中…</div>
             </div>
             <div
               v-if="klineError"
-              class="text-center py-8 text-red-500 text-sm"
+              class="text-center py-4 text-red-500 text-sm"
             >
               {{ klineError }}
             </div>
-          </div>
-
-          <!-- 成交量图（可选） -->
-          <div class="px-2 md:px-4 pb-2 md:pb-4">
-            <div
-              id="volume-chart"
-              style="width: 100%; height: 80px; min-height: 80px"
-            ></div>
           </div>
         </div>
       </div>
@@ -1014,7 +1174,6 @@
         onMounted,
         onUnmounted,
         nextTick,
-        watch,
       } = Vue;
       createApp({
         setup() {
@@ -1142,12 +1301,18 @@
 
           const rawData = ref({});
           const loading = ref(false);
+          const lastUpdated = ref("");
           const sortKey = ref("priceDiff");
           const sortOrder = ref("desc");
 
           // 主题：system | light | dark，默认跟随系统
           const theme = ref(localStorage.getItem("stock-theme") || "system");
           const themeOptions = [
+            {
+              value: "system",
+              label: "跟随系统",
+              icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
+            },
             {
               value: "light",
               label: "浅色",
@@ -1157,11 +1322,6 @@
               value: "dark",
               label: "深色",
               icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
-            },
-            {
-              value: "system",
-              label: "跟随系统",
-              icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
             },
           ];
 
@@ -1180,6 +1340,8 @@
           };
 
           let systemThemeMq = null;
+          let refreshTimer = null;
+
           const onSystemThemeChange = () => {
             if (
               theme.value === "system" &&
@@ -1200,6 +1362,20 @@
           let candlestickSeries = null;
           let volumeSeries = null;
           let chart = null;
+          let chartResizeHandler = null;
+
+          const destroyChart = () => {
+            if (chartResizeHandler) {
+              window.removeEventListener("resize", chartResizeHandler);
+              chartResizeHandler = null;
+            }
+            if (chart) {
+              chart.remove();
+              chart = null;
+              candlestickSeries = null;
+              volumeSeries = null;
+            }
+          };
 
           const periods = [
             { value: "day", label: "日 K" },
@@ -1238,6 +1414,7 @@
 
           // 获取实时数据
           const fetchData = () => {
+            if (loading.value) return;
             loading.value = true;
             const codes = stockList.value.map((s) => s.code).join(",");
             const url = `https://qt.gtimg.cn/q=${codes}`;
@@ -1267,6 +1444,11 @@
                   }
                 });
                 rawData.value = tempData;
+                lastUpdated.value = new Date().toLocaleTimeString("zh-CN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                });
               })
               .catch((err) => console.error("获取失败:", err))
               .finally(() => (loading.value = false));
@@ -1285,7 +1467,6 @@
               const url = `https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=${code},${periodParam},,,200,qfq`;
               const response = await fetch(url);
               const result = await response.json();
-              console.log("K线原始数据:", result);
 
               // 数据路径：result.data[code][qfqday] 或 result.data[code][day]（兜底）
               const codeData = result.data?.[code];
@@ -1333,9 +1514,7 @@
           const drawKLineChart = () => {
             if (!document.getElementById("kline-chart")) return;
 
-            if (chart) {
-              chart.remove();
-            }
+            destroyChart();
 
             const chartEl = document.getElementById("kline-chart");
             const chartHeight =
@@ -1429,14 +1608,13 @@
               });
             }
 
-            // 自适应窗口大小
-            window.addEventListener("resize", () => {
-              if (chart && document.getElementById("kline-chart")) {
-                chart.applyOptions({
-                  width: document.getElementById("kline-chart").clientWidth,
-                });
+            chartResizeHandler = () => {
+              const el = document.getElementById("kline-chart");
+              if (chart && el) {
+                chart.applyOptions({ width: el.clientWidth });
               }
-            });
+            };
+            window.addEventListener("resize", chartResizeHandler);
           };
 
           // ✅ 显示 K 线图
@@ -1450,8 +1628,14 @@
 
           // ✅ 关闭 K 线图
           const closeKLine = () => {
+            destroyChart();
             showKLineModal.value = false;
             selectedStock.value = null;
+            klineError.value = "";
+          };
+
+          const onKeyDown = (e) => {
+            if (e.key === "Escape" && showKLineModal.value) closeKLine();
           };
 
           // ✅ 切换周期
@@ -1580,15 +1764,19 @@
 
           onMounted(() => {
             fetchData();
-            setInterval(fetchData, 3000);
+            refreshTimer = setInterval(fetchData, 3000);
             systemThemeMq = window.matchMedia("(prefers-color-scheme: dark)");
             systemThemeMq.addEventListener("change", onSystemThemeChange);
+            document.addEventListener("keydown", onKeyDown);
           });
 
           onUnmounted(() => {
+            if (refreshTimer) clearInterval(refreshTimer);
+            destroyChart();
             if (systemThemeMq) {
               systemThemeMq.removeEventListener("change", onSystemThemeChange);
             }
+            document.removeEventListener("keydown", onKeyDown);
           });
 
           function jumpToTXCJ(stock) {
@@ -1599,6 +1787,7 @@
             stockList,
             sortedStocks,
             loading,
+            lastUpdated,
             sortKey,
             sortOrder,
             upCount,
